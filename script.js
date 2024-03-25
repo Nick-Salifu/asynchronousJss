@@ -102,23 +102,115 @@ const getCountryData = function(country){
 //   // getCountryData('australia')
 // })
 
-// getCountryData('hfhfhfh')
+// 
 
 
-const whereAmI = function(lat, long){
-  fetch(`https://geocode.xyz/${lat},${long}?geoit=json`)
+// const whereAmI = function(lat, long){
+//   fetch(`https://geocode.xyz/${lat},${long}?geoit=json&`)
+//   .then(response => response.json())
+//   .then(data => {
+//     console.log(data)
+//     console.log(`You are in ${data.city}, ${data.country}`);
+//     return fetch(`https://restcountries.com/v2/name/${data.country}`)
+//     .then(response => response.json())
+//     .then(data => renderCountry(data[0]))
+//   });
+// };
+
+// btn.addEventListener('click', function(){
+//   whereAmI(52.508, 13.381)
+//   whereAmI(19.037, 72.873)
+//   whereAmI(-33.933, 18.474)
+// });
+
+
+
+// const lotteryPromise = new Promise(function(resolve, reject){
+//   console.log('Lottery is going on')
+ 
+//   setTimeout(function(){
+//     if(Math.random() >= 0.5) {
+//       resolve('You win a lot of money')
+//     }else {
+//       reject('You lose a lot of money')
+//     }
+//   }, 3000)
+// });
+
+// lotteryPromise.then(res => console.log(res)).catch(err => console.error(err))
+
+// navigator.geolocation.getCurrentPosition(position => console.log(position), err => console.error(err));
+
+const getPosition = function(){
+  return new Promise(function(resolve, reject){
+    navigator.geolocation.getCurrentPosition(resolve, reject)
+  });
+};
+
+// getPosition().then(pos => console.log(pos))
+
+const whereAmI = function(){
+
+getPosition().then(pos => {
+  const{latitude:lat, longitude:long} = pos.coords;
+
+  return fetch(`https://geocode.xyz/${lat},${long}?geoit=json`)
+})
   .then(response => response.json())
   .then(data => {
     console.log(data)
     console.log(`You are in ${data.city}, ${data.country}`);
+
     return fetch(`https://restcountries.com/v2/name/${data.country}`)
-    .then(response => response.json())
+    .then(response => {
+      if(!response.ok) throw new Error(`Country not found (${response.status})`)
+      return response.json()
+    })
     .then(data => renderCountry(data[0]))
+    .catch(err => console.log(`${err.message}`))
   });
 };
 
-btn.addEventListener('click', function(){
-  whereAmI(52.508, 13.381)
-  whereAmI(19.037, 72.873)
-  whereAmI(-33.933, 18.474)
+// btn.addEventListener('click', whereAmI);
+
+const wait = function(seconds){
+  return new Promise(function(resolve){
+    setTimeout(resolve, seconds * 1000)
+  })
+}
+
+const imgContainer = document.querySelector('.images')
+
+const createImage = function(imgPath) {
+  return new Promise(function(resolve, reject){
+    const img = document.createElement('img');
+    img.src = imgPath;
+
+    img.addEventListener('load', function(){
+      imgContainer.append(img)
+      resolve(img)
+    })
+
+    img.addEventListener('error', function(){
+      reject(new Error('Image not found'))
+    })
+  })
+}
+let currentImg;
+createImage('img/img-1.jpg').then(img =>{
+  currentImg = img
+  console.log('Image 1 loading')
+  return wait(2)
 })
+.then(() => {
+  currentImg.style.display = 'none';
+  return createImage('img/img-2.jpg')
+})
+.then(img => {
+  console.log('Image 2 loading')
+  return wait(2)
+})
+.then(() =>{
+  currentImg.style.display = 'none';
+})
+.catch(err => console.error(err));
